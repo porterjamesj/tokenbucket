@@ -18,4 +18,8 @@ bucket = TokenBucket(
 bucket.consume(300)
 ~~~
 
-There's a small demo with multiple threads in `test.py`.
+There's a small example with multiple threads in `example.py`.
+
+There are tests using
+[Hypothesis](https://github.com/HypothesisWorks/hypothesis-python) in
+`test.py`, which you can run with `nose`, `py.test`, or what have you.

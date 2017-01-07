@@ -1,26 +1,30 @@
-from tokenbucket import TokenBucket
+from hypothesis import given
+from hypothesis import strategies as st
+
 from threading import Thread
-import logging
-logging.basicConfig()
+import time
+
+from tokenbucket import TokenBucket
 
 
-def take_10_tokens(i, bucket):
-    log = logging.getLogger(f"thread_{i}")
-    log.setLevel(logging.INFO)
-    log.info("attempting to take 10 tokens")
-    bucket.consume(10)
-    log.info("10 tokens taken")
-
-
-def main():
-    bucket = TokenBucket(rate=10)
-    threads = [Thread(target=take_10_tokens, args=(i, bucket))
-               for i in range(10)]
+@given(
+    requests=st.lists(st.floats(min_value=0, max_value=1),
+                      min_size=1, max_size=20),
+    rate_limit=st.floats(min_value=10, max_value=50)
+)
+def test_rate_limiting(requests, rate_limit):
+    bucket = TokenBucket(rate=rate_limit, capacity=float('inf'))
+    start = bucket._time
+    # construct a thread per request
+    threads = [Thread(target=lambda b, r=r: b.consume(r), args=(bucket,))
+               for r in requests]
+    # TODO stagger when the requests come in?
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join()
-
-
-if __name__ == "__main__":
-    main()
+    stop = time.monotonic()
+    elapsed = stop - start
+    actual_rate = sum(requests) / elapsed
+    assert bucket._tokens > 0
+    assert actual_rate < rate_limit
