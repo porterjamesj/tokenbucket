@@ -1,7 +1,5 @@
 import time
 from threading import Lock
-import logging
-logging.basicConfig()
 
 
 class TokenBucket(object):
@@ -14,8 +12,6 @@ class TokenBucket(object):
         # mutable attributes
         self._tokens = tokens
         self._time = time.monotonic()
-        self.log = logging.getLogger("token_bucket")
-        self.log.setLevel(logging.INFO)
 
     def _adjust(self):
         """
@@ -23,14 +19,12 @@ class TokenBucket(object):
         """
         now = time.monotonic()
         elapsed = now - self._time
-        self.log.info(f"adjusting from {self._time} to {now}")
 
         self._tokens = min(
             self.capacity,
             self._tokens + elapsed*self.rate
         )
         self._time = now
-        self.log.info(f"tokens now {self._tokens}")
 
     def tokens(self):
         """
@@ -52,7 +46,6 @@ class TokenBucket(object):
                 return
             else:
                 to_sleep = -self._tokens/self.rate
-                self.log.info(f"sleeping for {to_sleep} to get enough tokens")
                 time.sleep(to_sleep)
                 self._adjust()
                 assert self._tokens >= 0
